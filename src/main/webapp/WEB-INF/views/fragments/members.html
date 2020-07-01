@@ -1,0 +1,118 @@
+<th:block xmlns:th="http://www.thymeleaf.org" th:fragment="membersTable">
+	<div class="generalActions">
+		<div class="row">
+			<div class="col-md-2">
+				<button id="creationButton" class="btn btn-info btn-block"
+				th:attr="onclick='launchEditor(' + 'this,\'' + @{/memberForm} + '\')'"
+				>Create</button>
+			</div>
+		</div>
+		<br />
+	</div>
+
+	<div class="card">
+		<div class="card-block">
+			<table class="table table-hover table-striped">
+				<thead class="thead-dark">
+					<tr class="d-flex">
+						<th class="col-1">Id</th>
+						<th class="col-2">Type</th>
+						<th class="col-3">First Name</th>
+						<th class="col-3">Last Name</th>
+						<th class="col-3 text-center">Actions</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr class="d-flex" th:each="member :${pageData.pageContent}">
+						<td class="col-1" th:text="${member.memberId}">
+						</td>
+						<td class="col-2" th:text="${member.typeId}==1? 'Teacher' : 'Student'">
+						</td>
+						<td class="col-3" th:text="${member.firstName}">
+						</td>
+						<td class="col-3" th:text="${member.lastName}">
+						</td>
+						<td class="col-3">
+							<div class="row">
+								<div class="col-md-6 text-right">
+									<button class="btn btn-info btn-sm"
+										th:attr="onclick='launchEditor(' + 'this,\'' + 
+										@{/memberForm(id=${member.memberId},
+										page=${pageData.pageNumber})} + 
+										'\')'">Modify</button>
+								</div>
+								<div class="col-md-6 text-left">
+										<button class="btn btn-danger btn-sm" 
+										th:attr="onclick='requestDelete(' + '\'' + 
+										@{deleteMember(id=${member.memberId}, 
+										page=${pageData.pageNumber})} +	
+										'\',\'Delete member ID [' + ${member.memberId} + '] ' + 
+										${member.firstName} + ' ' + ${member.lastName} + 
+										'?\')'">Delete</button>
+								</div>
+							</div>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			
+			<div th:replace="~{fragments/pagination :: pagination('/members/', 'fragNav')}"></div>
+			<div th:replace="~{fragments/confirmation :: confirmation}"></div>
+
+		</div>
+	</div>
+	<script>
+		initNavListeners();
+   	</script>
+</th:block>
+
+
+<th:block xmlns:th="http://www.thymeleaf.org" th:fragment="memberForm">
+	<div class="createMemberForm">
+		<form class="form" th:action="@{${url}(page=${page}, id=(${id}!=null? ${id} : 0))}"
+				th:object="${member}" method="POST">
+			<div class="modal modalFragment"  data-backdrop="" id="createMemberModal" tabindex="-1">
+				<div class="modal-dialog">
+					<div class="modal-content">
+						<div class="modal-header">
+							<h5 class="modal-title" id="createMemberModalLabel">Update/Create</h5>
+							<button type="button" class="close" data-dismiss="modal">
+								<span>&times;</span>
+							</button>
+						</div>
+						<div class="modal-body">
+							<div class="form-group">
+								<label for="id" id="id" class="col-form-label">ID:</label> 
+								<input type="text" class="form-control" th:field="*{memberId}"
+									id="id" name="memberId" readonly/>
+							</div>
+							<div class="form-group">
+								<label for="typeId">Member type</label> 
+								<select id="typeId" class="form-control" th:field="*{typeId}">
+									<option value="2" selected>Student</option>
+									<option value="1">Teacher</option>
+								</select>
+							</div>
+							<div class="form-group">
+								<label for="firstName" class="col-form-label">First Name:</label> 
+								<input type="text" class="form-control" th:field="*{firstName}"
+									id="firstName" name="firstName"/>
+							</div>
+							<div class="form-group">
+								<label for="lastName" class="col-form-label">Last Name:</label> 
+								<input type="text" class="form-control"  th:field="*{lastName}"
+									id="lastName" name="lastName"/>
+							</div>
+						</div>
+						<div class="modal-footer">
+							<button type="button" class="btn btn-secondary"
+								data-dismiss="modal">Close</button>
+							<button type="button" class="btn btn-info submitButton" 
+								onclick="submitForm()" data-dismiss="modal">Save</button>
+						</div>
+					</div>
+				</div>
+			</div>
+		</form>
+	</div>
+</th:block>

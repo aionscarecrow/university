@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE xml>
+<configuration debug="false">
+
+    <statusListener class="ch.qos.logback.core.status.NopStatusListener" />
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>
+                %date{ISO8601} [%-5level] [%-20.20thread] %-50.50logger{50} | - %msg%n
+            </pattern>
+        </encoder>
+    </appender>
+
+    <root level="trace">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+
+</configuration>

@@ -1,0 +1,9 @@
+<th:block xmlns:th="http://www.thymeleaf.org" th:fragment="pagination(baseURL, id)">
+	<ul class="nav nav-pills justify-content-center">
+		<li class="nav-item" th:each="i : ${#numbers.sequence(1,pageData.pageCount)}">
+			<a class="nav-link navPills" th:id="${id}" th:href="@{${baseURL}(page=${i})}"
+				th:text="${i}" th:classappend="${pageData.pageNumber}==${i}?'active':''">
+			</a>
+		</li>
+	</ul>
+</th:block>

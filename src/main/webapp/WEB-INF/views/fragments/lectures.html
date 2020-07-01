@@ -1,0 +1,262 @@
+<th:block xmlns:th="http://www.thymeleaf.org" th:fragment="lecturesTable">
+	<div class="generalActions">
+		<div class="row">
+			<div class="col-md-2">
+				<button id="creationButton" class="btn btn-info btn-block"
+					th:attr="onclick='requestURL(\'' + @{/lectureEditor} + '\')'"
+					>Create</button>
+			</div>
+		</div>
+		<br />
+	</div>
+	<div class="card">
+		<div class="card-block">
+			<table class="table table-hover table-striped">
+				<thead class="thead-dark">
+					<tr class="d-flex text-center">
+						<th class="col-1">Id</th>
+						<th class="col-2">Date</th>
+						<th class="col-3">Course</th>
+						<th class="col-2">Teacher</th>
+						<th class="col-1">Students</th>
+						<th class="col-3 text-center">Actions</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr class="d-flex text-center" th:each="lecture :${pageData.pageContent}">
+						<td class="col-1" 
+							th:text="${lecture.lectureId}">
+						</td>
+						<td class="col-2" 
+							th:text="${#temporals.format(lecture.date, 'yyyy-MM-dd HH:mm')}">
+						</td>
+						<td class="col-3" 
+							th:text="${lecture.course.subject}">
+						</td>
+						<td class="col-2" 
+							th:text="${lecture.teacher.firstName + ' ' 
+							+ lecture.teacher.lastName}">
+						</td>
+						<td class="col-1" 
+							th:text="${lecture.students.size()}">
+						</td>
+						<td class="col-3">
+							<div class="row">
+								<div class="col-md-6 text-right">
+										<button class="btn btn-info btn-sm"
+										th:attr="onclick='requestURL(\'' + 
+										@{lectureEditor(id=${lecture.lectureId},
+										page=${pageData.pageNumber})} + '\')'">Modify</button>
+								</div>
+								<div class="col-md-6 text-left">
+										<button class="btn btn-danger btn-sm" 
+										th:attr="onclick='requestDelete(' + '\'' + 
+										@{deleteLecture(id=${lecture.lectureId}, 
+										page=${pageData.pageNumber})} +	
+										'\',\'Delete lecture ID [' + ${lecture.lectureId} + 
+										'] on ' + ${lecture.course.subject} + ', scheduled for ' + 
+										${#temporals.format(lecture.date, 'yyyy-MM-dd HH:mm')} + 
+										'?\')'">Delete</button>
+								</div>
+							</div>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+
+			<div th:replace="~{fragments/pagination :: pagination('/lectures/', 'fragNav')}"></div>
+			<div th:replace="~{fragments/confirmation :: confirmation}"></div>
+
+		</div>
+	</div>
+	<script>
+		initNavListeners();
+   	</script>
+</th:block>
+
+
+<th:block xmlns:th="http://www.thymeleaf.org" th:fragment="lectureEditor">
+	<br />
+	<div class="container lectureEditorForm">
+		<div class="editedLectureFragment">
+			<div th:insert="~{this :: editedLectureTable}"></div>
+		</div>
+
+		<div class="card text-center">
+			<div class="card-body">
+				<ul class="nav nav-tabs">
+					<li class="nav-item">
+						<a class="ed-init nav-link active" id="dateEditor"
+							th:href="@{/datePicker(id=${lecture.lectureId}, date=${lecture.date})}">Date</a>
+					</li>
+					<li class="nav-item">
+						<a class="ed-init nav-link" id="courseEditor" 
+						th:href="@{/coursePicker}">Course</a>
+					</li>
+					<li class="nav-item">
+						<a class="ed-init nav-link" id="teacherEditor" 
+						th:href="@{/memberPicker(memberType='1')}">Teacher</a>
+					</li>
+					<li class="nav-item">
+						<a class="ed-init nav-link" id="teacherEditor" 
+						th:href="@{/memberPicker(memberType='2')}">Student</a>
+					</li>
+					<li class="nav-item ml-auto">
+						<button type="button" onclick="submitForm('.fragmentTarget')"
+							class="btn btn-sm btn-block btn-danger font-weight-bold">Save</button>
+					</li>
+				</ul>
+				<div class="">
+						<div class="editorTarget"><p class="text-muted h2">...</p></div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div>
+		<form class="form" th:object="${lecture}" method="POST"
+			th:action="@{${url}(page=${page})}">
+			<input id="form-id" type="hidden" name="lectureId" 
+				th:value="${lecture != null}? *{lectureId} : 0">
+			<input id="form-date" type="hidden" name="date" 
+				th:value="${lecture != null}? *{date} : ${#temporals.createNow()}">
+			<input id="form-courseId" type="hidden" name="courseId" 
+				th:value="${lecture != null AND lecture.course != null}? *{course.courseId} : ''">
+			<input id="form-teacherId" type="hidden" name="teacherId" 
+				th:value="${lecture != null AND lecture.teacher != null}? *{teacher.memberId} : ''">
+			<div id="form-students">
+				<input id="form-studentId" type="hidden" name="studentId" 
+				th:value="${student.memberId}" th:each="student :${lecture.students}">
+			</div>
+		</form>
+	</div>
+	<script>
+		initEditorListeners();
+		setSectionTitle('Lecture editor');
+		fireClickEvent($('#dateEditor'));
+   	</script>
+</th:block>
+
+
+<th:block xmlns:th="http://www.thymeleaf.org" th:fragment="editedLectureTable">
+	<table class="table table-hover table-striped">
+		<thead class="thead-dark">
+			<tr class="d-flex text-center row">
+				<th class="col-1">Id</th>
+				<th class="col-3">Date</th>
+				<th class="col-3">Course</th>
+				<th class="col-3">Teacher</th>
+				<th class="col-2">Students</th>
+			</tr>
+		</thead>
+		<tbody class="">
+			<tr class="d-flex text-center row" th:object="${lecture}">
+				<td class="col-1 font-weight-bold" id="table-id" 
+					th:text="${lecture != null}? *{lectureId} : '-'">
+				</td>
+				<td class="col-3 font-weight-bold" id="table-date"
+					th:text="${lecture != null}? 
+					${#temporals.format(lecture.date, 'yyyy-MM-dd HH:mm')} : 'pick date'">
+				</td>
+				<td class="col-3 font-weight-bold" id="table-course"
+					th:text="${lecture != null AND lecture.course != null}? *{course.subject} : 'pick course'">
+				</td>
+				<td class="col-3 font-weight-bold" id="table-teacher" th:text="${lecture.teacher != null}? 
+					${lecture.teacher.firstName + ' '	+ lecture.teacher.lastName} : 'pick teacher'">
+				</td>
+				<td class="col-2  font-weight-bold" id="table-students" 
+					th:text="${lecture.students.size()}">
+				</td>
+			</tr>
+		</tbody>
+	</table>
+</th:block>
+
+
+<th:block xmlns:th="http://www.thymeleaf.org" th:fragment="memberPicker(memberType)">
+	<br />
+		<div class="row justify-content-center">
+
+			<table class="table table-hover table-condensed col-11">
+				<thead class="thead-light">
+					<tr class="d-flex row">
+						<th class="col-1 p-0">ID</th>
+						<th class="col-4 p-0">First Name</th>
+						<th class="col-7 p-0">Last Name</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr class="ok d-flex row clickable-row" id='unknown'
+					th:id="${memberType == '1'}? 'teacherOk' : 'studentOk'" 
+					style="min-height:30px; cursor:pointer" 
+					th:each="member : ${pageData.pageContent}">
+						<td class="col-1 p-0" id="selectId" th:text="${member.memberId}"></td>
+						<td class="col-4 p-0" id="selectFirstName" th:text="${member.firstName}"></td>
+						<td class="col-7 p-0" id="selectLastName" th:text="${member.lastName}"></td>
+					</tr>
+				</tbody>
+			</table>
+		<div th:replace="~{fragments/pagination :: pagination('/memberPicker?memberType=' + ${memberType}, 'editNav')}"></div>
+		</div>
+	<script th:inline="javascript">
+		initNavListeners();
+		initEditorListeners();
+		var picker = /*[[${memberType == \'1\'}? '#form-teacherId' : '#form-studentId']]*/'#unkown';
+		markEditorRows(getFormValuesById(picker));
+	</script>
+</th:block>
+
+
+<th:block xmlns:th="http://www.thymeleaf.org" th:fragment="coursePicker">
+	<br />
+		<div class="row justify-content-center">
+
+			<table class="table table-hover table-condensed col-11">
+				<thead class="thead-light">
+					<tr class="d-flex row">
+						<th class="col-1 p-0">Id</th>
+						<th class="col-4 p-0">Subject</th>
+						<th class="col-7 p-0">Description</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr class="ok d-flex row clickable-row" id="courseOk" 
+					style="min-height:30px; cursor:pointer" 
+					th:each="course : ${pageData.pageContent}">
+						<td class="col-1 p-0" id="selectId" th:text="${course.courseId}"></td>
+						<td class="col-4 p-0" id="selectSubj" th:text="${course.subject}"></td>
+						<td class="col-7 p-0" id="selectDesc" th:text="${course.description}"></td>
+	
+					</tr>
+				</tbody>
+			</table>
+
+		<div th:replace="~{fragments/pagination :: pagination('/coursePicker', 'editNav')}"></div>
+		</div>
+	<script>
+		initNavListeners();
+		initEditorListeners();
+		markEditorRows(getFormValuesById('#form-courseId'));
+	</script>
+</th:block>
+
+
+<th:block xmlns:th="http://www.thymeleaf.org" th:fragment="datePicker(dateTime)">
+			<br />
+			<form>
+		<div class="form-group row justify-content-start">
+			<div class="col-6">
+				<input class="form-control" type="datetime-local"
+					id="datetime-input" value="1970-01-01T00:00:00" 
+					pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}"
+					th:value="${dateTime} == null? '$(#temporals.createNow())' : ${dateTime}">
+			</div>
+			<div class="col-1">
+				<button type="submit" onclick="" class="btn btn-sm btn-secondary ok" id="dateOk">Set</button>
+			</div>
+		</div>
+	</form>
+	<script>
+		initEditorListeners();
+	</script>
+</th:block>

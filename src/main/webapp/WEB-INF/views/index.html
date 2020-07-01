@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html xmlns:th="www.thymeleaf.org" lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+	content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+<link rel="stylesheet" type="text/css"
+	href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+	th:href="@{/webjars/bootstrap/css/bootstrap.min.css}" />
+
+<style>
+.btn {
+	color: #eee;
+}
+</style>
+
+<title>Donald Duck University</title>
+</head>
+<body>
+	<div class="container">
+		<div class="navItems">
+			<br />
+			<div class="row">
+				<div class="col-md-2">
+					<button id="membersButton" class="btn btn-primary btn-block"
+					th:attr="onclick='requestSection(\'' + @{members} + '\', \'Members\')'"
+					>Members</button>
+				</div>
+				<div class="col-md-2">
+					<button id="coursesButton" class="btn btn-primary btn-block"
+					th:attr="onclick='requestSection(\'' + @{courses} + '\', \'Courses\')'"
+					>Courses</button>
+				</div>
+				<div class="col-md-2">
+					<button id="lecturesButton"	class="btn btn-primary btn-block"
+						th:attr="onclick='requestSection(\'' + @{lectures} + '\', \'Lectures\')'"
+					>Lectures</button>
+				</div>
+				<div class="col-md-2">
+				</div>
+				<div class="col-md-2">
+				</div>
+				<div class="col-md-2">
+				</div>
+			</div>
+		</div>
+		
+		<br />
+		<h2 id="sectionTitle">Select section</h2>
+		<br />
+		
+			
+		<div class="fragmentTarget">
+			<p>...</p>
+		</div>
+		<br />
+		
+ 		
+		
+		<div class="modalTarget"></div>
+
+	</div>
+
+	<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+		th:src="@{/webjars/jquery/jquery.min.js}"></script>
+
+	<script
+		src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+		th:src="@{/webjars/bootstrap/js/bootstrap.min.js}"></script>
+			
+	<script src="../js/main.js" th:src="@{js/main.js}"></script>
+	<script src="../js/listeners.js" th:src="@{js/listeners.js}"></script>
+		
+	<script>
+		fireClickEvent($('#lecturesButton'));
+	</script>
+</body>
+</html>
