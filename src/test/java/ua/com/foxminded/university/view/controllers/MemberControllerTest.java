@@ -239,6 +239,9 @@ class MemberControllerTest {
 		@Test
 		@DisplayName("calls delete method")
 		void testCallsDelete() throws ServiceException {
+			when(pagination.hasValidCache()).thenReturn(true);
+			when(pagination.getEntry(anyInt())).thenReturn(Optional.of(member));
+			
 			memberController.delete(member.getMemberId(), Optional.of(1));
 			
 			verify(memberService).delete(member);

@@ -1,103 +1,86 @@
 package ua.com.foxminded.university.service;
 
+import java.util.LinkedList;
 import java.util.List;
+import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import ua.com.foxminded.university.dao.MemberDao;
-import ua.com.foxminded.university.dao.exceptions.DaoException;
+import ua.com.foxminded.university.domain.entities.Lecture;
 import ua.com.foxminded.university.domain.entities.Member;
+import ua.com.foxminded.university.domain.entities.Student;
+import ua.com.foxminded.university.domain.entities.Teacher;
+import ua.com.foxminded.university.repository.MemberRepository;
 import ua.com.foxminded.university.service.exceptions.ServiceException;
+import ua.com.foxminded.university.service.trackers.MemberTracker;
+import ua.com.foxminded.university.service.validators.ConfigurableEntityValidator;
+import ua.com.foxminded.university.service.validators.EntityValidator;
+import ua.com.foxminded.university.service.validators.ValidationRules.MemberRules;
 
 @Service
-public class MemberServiceImpl implements MemberService {
+public class MemberServiceImpl implements MemberService, InitializingBean {
 	
-	private MemberDao memberDao;
+	@Autowired
+	private MemberRepository repository;
+	
+	@Autowired
+	private LectureService lectureService;
+	
+	@Autowired
+	@Qualifier("memberValidator")
+	private EntityValidator<Member> validator;
+	
+	@Autowired
+	private MemberTracker typeTracker;
+	
 	private static final Logger log = LoggerFactory.getLogger(MemberServiceImpl.class);
 
-	public MemberServiceImpl(@Autowired MemberDao memberDao) {
-		this.memberDao = memberDao;
+	@Override
+	public void afterPropertiesSet() throws Exception {
+		configureEntityValidator();
 	}
-	
+
 	
 	@Override
 	public void create(Member member) throws ServiceException {
-		if(member == null) {
-		  log.error("failed to create member [{}]", member); 
-		  throw new ServiceException("Member object is null"); 
-		}
-		log.debug("creating member [{}]", member);
+		validator.validateCreateable(member);
+		log.debug("Creating member [{}]", member);
 		
 		try {
-			memberDao.create(member);
-		} catch(DataAccessException | DaoException e) {
+			repository.save(member);
+		} catch(DataAccessException e) {
 			log.error(e.getMessage(), e);
-			throw new ServiceException(e.getMessage(), e);
+			throw new ServiceException("Failed to create member", e);
 		}
-		log.debug("member [{}] created", member);
+		log.info("member [{}] created", member);
 	}
 	
 
 	@Override
 	public Member retrieveById(int id) throws ServiceException {
-		if(id < 1) {
-			log.error("failed to retrieve member by id [{}]", id);
-			throw new ServiceException("member id field invalid");
-		}
-		log.debug("retrieving member by id [{}]", id);
+		validator.validateId(id);
+		log.debug("Retrieving member by id [{}]", id);
 		
 		try {
-			return memberDao.retrieveById(id);
+			Member member = repository.findById(id).orElseThrow(
+					() -> new ServiceException("Member not found"));
+			typeTracker.trackType(member);
+			
+			return downCast.apply(member);
+			
 		} catch(DataAccessException e) {
 			log.error(e.getMessage(), e);
 			throw new ServiceException(e.getMessage(), e);
 		}
 		
-	}
-	
-
-	@Override
-	public List<Member> retrieveByLectureId(int lectureId) throws ServiceException {
-		if(lectureId < 1) {
-			log.error("failed to retrieve members by lecture id [{}]", lectureId);
-			throw new ServiceException("lecture id field invalid");
-		}
-		log.debug("retrieving members by lecture id [{}]", lectureId);
-		
-		try {
-			return memberDao.retrieveByLectureId(lectureId);
-		} catch(DataAccessException e) {
-			log.error(e.getMessage(), e);
-			throw new ServiceException(e.getMessage(), e);
-		}
-	}
-	
-
-	@Override
-	public List<Member> retrieveAllTeachers() throws ServiceException {
-		log.debug("retrieving list of all teachers");
-		try {
-			return memberDao.retrieveAllTeachers();
-		} catch(DataAccessException e) {
-			log.error(e.getMessage(), e);
-			throw new ServiceException(e.getMessage(), e);
-		}
-	}
-	
-
-	@Override
-	public List<Member> retrieveAllStudents() throws ServiceException {
-		log.debug("retrieving list of all students");
-		try {
-			return memberDao.retrieveAllStudents();
-		} catch(DataAccessException e) {
-			log.error(e.getMessage(), e);
-			throw new ServiceException(e.getMessage(), e);
-		}
 	}
 	
 
@@ -105,10 +88,15 @@ public class MemberServiceImpl implements MemberService {
 	public List<Member> retrieveAll() throws ServiceException {
 		log.debug("retrieving all members");
 		try {
-			return memberDao.retrieveAll();
+			List<Member> members = new LinkedList<>(); 
+			repository.findAllByOrderByMemberIdAsc().forEach(members::add);
+			typeTracker.trackTypes(members);
+			
+			return downCastList.apply(members);
+			
 		} catch(DataAccessException e) {
 			log.error(e.getMessage(), e);
-			throw new ServiceException(e.getMessage(), e);
+			throw new ServiceException("Failed to retrieve all members", e);
 		}
 
 	}
@@ -116,39 +104,95 @@ public class MemberServiceImpl implements MemberService {
 
 	@Override
 	public void update(Member member) throws ServiceException {
-		if(member == null || member.getMemberId() < 1) {
-			log.error("failed to update member [{}]", member);
-			throw new ServiceException("Member object is null or id field invalid");
+		validator.validateUpdatable(member);
+		
+		if(typeTracker.typeIdChanged(member)) {
+			validateChanges(member);
 		}
-		log.debug("updating member with data [{}]", member);
+		
+		log.debug("Updating member with data [{}]", member);
 		
 		try {
-			memberDao.update(member);
-		} catch(DataAccessException | DaoException e) {
+			repository.save(member);
+		} catch(DataAccessException e) {
 			log.error(e.getMessage(), e);
-			throw new ServiceException(e.getMessage(), e);
+			throw new ServiceException("Failed to update member", e);
 		}
-		log.debug("member updated");
+		log.info("Member updated with data [{}]", member);
 	}
 	
 
-	@Override
-	public void delete(Member member) throws ServiceException {
-		if(member == null || member.getMemberId() < 1) {
-			log.error("failed to delete member [{}]", member);
-			throw new ServiceException("Member object is null or id field invalid");
+	private void validateChanges(Member member) throws ServiceException {
+		if(getLectureCount(member) > 0) {
+			log.error("Unacceptable state change for [{}]", member);
+			
+			throw new ServiceException(
+					"Unacceptable state change. Member type cannot be altered - "
+					+ "found scheduled lectures for id " + member.getMemberId());
 		}
-		log.debug("deleting member [{}]", member);
-		
-		try {
-			memberDao.delete(member);
-		} catch(DataAccessException | DaoException e) {
-			log.error(e.getMessage(), e);
-			throw new ServiceException(e.getMessage(), e);
-		}
-		log.debug("member deleted");
+		log.debug("State change accepted. No scheduled lectures found");
 	}
 	
+	
+	@Override
+	public Integer getLectureCount(Member member) throws ServiceException {
+		try {
+			return lectureService.getLectureCountFor(member);
+		} catch(DataAccessException e) {
+			log.error(e.getMessage(), e);
+			throw new ServiceException("Failed to retrieve lecture count", e);
+		}
+	}
+
+	
+	@Override
+	@Transactional(rollbackFor = Exception.class)
+	public void delete(Member member) throws ServiceException {
+		validator.validateDeletable(member);
+			
+		log.debug("Deleting member [{}]", member);
+		
+		try {
+			removeFromLectures(member);
+			repository.delete(upCast.apply(member));
+		} catch(DataAccessException e) {
+			log.error(e.getMessage(), e);
+			throw new ServiceException("Failed to delete member", e);
+		}
+	}
+	
+	private void removeFromLectures(Member member) {
+		for(Lecture lecture : member.getLectures()) {
+			lecture.removeStudent(member);
+		}
+	}
+
+	
+	UnaryOperator<Member> upCast = Member::new;
+			
+	UnaryOperator<Member> downCast = m -> 
+			(m.getTypeId() == Teacher.MEMBER_TYPE)? new Teacher(m) : new Student(m);
+			
+	UnaryOperator<List<Member>> downCastList = list -> 
+			list.stream().map(downCast::apply).collect(Collectors.toList());
+	
+			
+	private void configureEntityValidator() {
+		log.info("Configuring validator for [{}]", Member.class);
+		ConfigurableEntityValidator<Member> config = 
+				(ConfigurableEntityValidator<Member>) this.validator;
+		
+		config.addDeletionRule(MemberRules.HAS_ID);
+		config.addUpdateRule(MemberRules.HAS_ID);
+		config.addUpdateRule(MemberRules.HAS_TYPE_ID);
+		config.addUpdateRule(MemberRules.HAS_FIRST_NAME);
+		config.addUpdateRule(MemberRules.HAS_LAST_NAME);
+		config.addCreationRule(MemberRules.HAS_TYPE_ID);
+		config.addCreationRule(MemberRules.HAS_FIRST_NAME);
+		config.addCreationRule(MemberRules.HAS_LAST_NAME);
+	}
+
 }
+
 
 

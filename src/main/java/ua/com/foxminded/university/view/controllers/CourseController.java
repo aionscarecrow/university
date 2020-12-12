@@ -76,8 +76,7 @@ public class CourseController {
 		
 		log.debug("delete request params: id [{}], page [{}]", id, page);
 		
-		Course course = new Course();
-		course.setCourseId(id);
+		Course course = getCourseById(id);
 		
 		courseService.delete(course);
 		pagination.invalidateCache();
@@ -102,6 +101,7 @@ public class CourseController {
 			modelView.addObject("page", page.orElse(1));
 		} else {
 			course = new Course();
+			
 			modelView.addObject("page", Integer.MAX_VALUE);
 		}
 		modelView.addObject("url", "/saveCourse");

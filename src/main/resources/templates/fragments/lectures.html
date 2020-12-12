@@ -17,8 +17,7 @@
 						<th class="col-1">Id</th>
 						<th class="col-2">Date</th>
 						<th class="col-3">Course</th>
-						<th class="col-2">Teacher</th>
-						<th class="col-1">Students</th>
+						<th class="col-3">Teacher</th>
 						<th class="col-3 text-center">Actions</th>
 					</tr>
 				</thead>
@@ -33,12 +32,9 @@
 						<td class="col-3" 
 							th:text="${lecture.course.subject}">
 						</td>
-						<td class="col-2" 
+						<td class="col-3" 
 							th:text="${lecture.teacher.firstName + ' ' 
 							+ lecture.teacher.lastName}">
-						</td>
-						<td class="col-1" 
-							th:text="${lecture.students.size()}">
 						</td>
 						<td class="col-3">
 							<div class="row">
@@ -196,8 +192,8 @@
 					</tr>
 				</tbody>
 			</table>
-		<div th:replace="~{fragments/pagination :: pagination('/memberPicker?memberType=' + ${memberType}, 'editNav')}"></div>
 		</div>
+		<div th:replace="~{fragments/pagination :: pagination('/memberPicker?memberType=' + ${memberType}, 'editNav')}"></div>
 	<script th:inline="javascript">
 		initNavListeners();
 		initEditorListeners();
@@ -230,9 +226,8 @@
 					</tr>
 				</tbody>
 			</table>
-
-		<div th:replace="~{fragments/pagination :: pagination('/coursePicker', 'editNav')}"></div>
 		</div>
+		<div th:replace="~{fragments/pagination :: pagination('/coursePicker', 'editNav')}"></div>
 	<script>
 		initNavListeners();
 		initEditorListeners();

@@ -244,8 +244,8 @@ class CourseControllerTest {
 		@Test
 		@DisplayName("calls delete method")
 		void testCallsDelete() throws ServiceException {
+			when(courseService.retrieveById(1)).thenReturn(course);
 			courseController.delete(course.getCourseId(), Optional.of(1));
-			
 			verify(courseService).delete(course);
 		}
 	}

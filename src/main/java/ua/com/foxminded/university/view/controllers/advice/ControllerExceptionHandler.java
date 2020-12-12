@@ -20,13 +20,15 @@ public class ControllerExceptionHandler {
 	
 	@ExceptionHandler(ServiceException.class)
 	public ModelAndView handleServiceException(ServiceException e) {
-		log.error("Handling ServiceException - [{}]", e.getMessage());
+		log.debug("Handling ServiceException - [{}]", e.getMessage());
+		log.error(e.getMessage(), e);
 		return prepareModel(e, SERVICE_EXCEPTION_VIEW);
 	}
 	
 	@ExceptionHandler(Exception.class)
 	public ModelAndView handleGenericException(Exception e) {
-		log.error("Handling {} - [{}]",	e.getClass().getSimpleName(), e.getMessage());
+		log.debug("Handling {} - [{}]",	e.getClass(), e.getMessage());
+		log.error(e.getMessage(), e);
 		return prepareModel(e, GENERIC_EXCEPTION_VIEW);
 	}
 	

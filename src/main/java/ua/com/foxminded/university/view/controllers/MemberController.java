@@ -28,7 +28,7 @@ public class MemberController {
 	
 	@Autowired
 	@Qualifier("memberPaginator")
-	private EntryQueryablePaginator<Member> pagination;
+	EntryQueryablePaginator<Member> pagination;
 	
 	public static final String TABLE_FRAGMENT = "fragments/members :: membersTable";
 	public static final String EDIT_FRAGMENT = "fragments/members :: memberForm";
@@ -48,6 +48,7 @@ public class MemberController {
 		
 		return modelView;
 	}
+	
 	
 	PageData<Member> getMembersPageData(int page, String fetch, Class<?>...classes) 
 			throws ServiceException {
@@ -75,13 +76,11 @@ public class MemberController {
 	@PostMapping("/deleteMember")
 	public ModelAndView delete(@RequestParam(required = true) int id,
 			@RequestParam Optional<Integer> page) throws ServiceException {
-		
 		log.debug("delete request params: id [{}], page [{}]", id, page);
-		
-		Member member = new Member();
-		member.setMemberId(id);
-		
+
+		Member member = getMemberById(id);
 		memberService.delete(member);
+		
 		pagination.invalidateCache();
 		
 		return listMembers(page.orElse(1), "fetch");

@@ -6,6 +6,7 @@ public class Student extends Member {
 	
 	public Student() {
 		super();
+		this.setTypeId(MEMBER_TYPE);
 	}
 
 	

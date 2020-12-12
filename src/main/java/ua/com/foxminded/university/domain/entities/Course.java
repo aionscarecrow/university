@@ -2,10 +2,26 @@ package ua.com.foxminded.university.domain.entities;
 
 import java.util.Objects;
 
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+@Entity
+@Table(name = "courses")
 public class Course {
 	
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(name = "course_id")
 	private int courseId;
+	
+	@Column(name = "subject", nullable = false)
 	private String subject;
+	
+	@Column(name = "description")
 	private String description;
 
 	
@@ -52,7 +68,8 @@ public class Course {
 
 	@Override
 	public String toString() {
-		return "Course: [courseId=" + courseId + ", subject=" + subject + ", description=" + description + "]";
+		return "Course: [courseId=" + courseId + ", subject=" + subject + 
+				", description=" + description + "]";
 	}
 
 
@@ -71,7 +88,8 @@ public class Course {
 		if (getClass() != obj.getClass())
 			return false;
 		Course other = (Course) obj;
-		return courseId == other.courseId && Objects.equals(description, other.description)
+		return courseId == other.courseId
+				&& Objects.equals(description, other.description)
 				&& Objects.equals(subject, other.subject);
 	}
 

@@ -3,6 +3,7 @@ package ua.com.foxminded.university.domain;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -15,7 +16,6 @@ import org.junit.jupiter.api.Test;
 
 import ua.com.foxminded.university.domain.entities.Course;
 import ua.com.foxminded.university.domain.entities.Lecture;
-import ua.com.foxminded.university.domain.entities.LectureSchedule;
 import ua.com.foxminded.university.domain.entities.Member;
 import ua.com.foxminded.university.domain.entities.Student;
 import ua.com.foxminded.university.domain.entities.Teacher;
@@ -220,7 +220,6 @@ class UniversityTest {
 			lecture2 = new Lecture();
 			lecture2.setTeacher((Teacher)teacher);
 			lecture2.addStudent((Student)student1);
-			lecture2.addStudent((Student)student2);
 			lecture2.setCourse(course);
 		}
 		
@@ -228,31 +227,34 @@ class UniversityTest {
 		@DisplayName("retrieves daily lectures")
 		void testDailySchedule() throws DomainException {
 			
-			String expectedString = "Lecture ID: 1\n" + 
-					"Date: " + currentDateTime + "\n" + 
-					"Course: [courseId=1, subject=Glass blowing, description="
-					+ "The technique of inflating molten glass]\n" + 
-					"Teacher: [memberId=100, typeId=1, firstName=Marla, lastName=Singer]\n" + 
-					"Student: [memberId=99, typeId=2, firstName=Ralph, lastName=Cifaretto]\n" + 
-					"Student: [memberId=98, typeId=2, firstName=Charmaine, lastName=Bucco]\n" + 
-					"\n";
+			int tomorrowsLectureId = 2;
+			lecture2.setLectureId(tomorrowsLectureId);
+			lecture2.setDate(currentDateTime.plusDays(1));		
 			
-			lecture2.setDate(currentDateTime.plusDays(1));
 			university.scheduleLecture(predefinedLecture);
 			university.scheduleLecture(lecture2);
-			assertTrue(
-					university.getDailySchedule(student1).toString().equals(expectedString),
-					"only today's lectures should be listed");
+			
+			int expectedScheduleSize = 1;
+			int actualScheduleSize = university.getDailySchedule(student1).getLectures().size();
+			assertEquals(expectedScheduleSize, actualScheduleSize, 
+					"schedule should contain 1 lecture");
+			
+			Lecture expectedLecture = predefinedLecture;
+			Lecture actualLecture = university.getDailySchedule(student1).getLectures().get(0);
+			assertEquals(expectedLecture, actualLecture, 
+					"schedule should contain today's lecture");
 		}
 		
 		@Test
-		@DisplayName("retrieves monthly lectures")
+		@DisplayName("retrieves empty schedule if no lecture dates match current month")
 		void testMonthlySchedule() throws DomainException {
 			lecture2.setDate(currentDateTime.plusMonths(1));
 			university.scheduleLecture(lecture2);
-			assertTrue(
-					university.getMonthlySchedule(teacher).toString().equals(""),
-					"only current month's lectures should be listed");
+			
+			int expectedScheduleSize = 0;
+			int actualScheduleSize = university.getMonthlySchedule(teacher).getLectures().size();
+			
+			assertEquals(expectedScheduleSize, actualScheduleSize);
 		}
 	}
 }

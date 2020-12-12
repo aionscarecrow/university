@@ -1,11 +1,42 @@
 package ua.com.foxminded.university.domain.entities;
 
+import java.util.HashSet;
+import java.util.Set;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
+import javax.persistence.ManyToMany;
+import javax.persistence.Table;
+
+@Entity
+@Table(name = "members")
 public class Member {
 	
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(name = "member_id")
 	private int memberId;
+	
+	@Column(name = "type_id")
 	private int typeId;
+	
+	@Column(name = "first_name", nullable = false)
 	private String firstName;
+	
+	@Column(name = "last_name", nullable = false)
 	private String lastName;
+	
+	@ManyToMany(fetch = FetchType.EAGER)
+	@JoinTable(name = "lecture_student", 
+			joinColumns = @JoinColumn(name = "student_id"), 
+			inverseJoinColumns = @JoinColumn(name = "lecture_id"))
+	private Set<Lecture> lectures = new HashSet<>();
 	
 	public Member() {
 		super();
@@ -55,10 +86,18 @@ public class Member {
 		this.typeId = typeId;
 	}
 
+	public Set<Lecture> getLectures() {
+		return lectures;
+	}
+
+	public void setLectures(Set<Lecture> lectures) {
+		this.lectures = lectures;
+	}
+
 	@Override
 	public String toString() {
-		return getClass().getSimpleName() + ": [memberId=" + memberId + ", typeId=" + 
-				typeId + ", firstName=" + firstName + ", lastName="	+ lastName + "]";
+		return "Member [memberId=" + memberId + ", typeId=" + typeId 
+				+ ", firstName=" + firstName + ", lastName=" + lastName + "]";
 	}
 
 	@Override

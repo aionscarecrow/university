@@ -1,7 +1,9 @@
-package ua.com.foxminded.university.domain.entities;
+package ua.com.foxminded.university.domain;
 
 import java.util.LinkedList;
 import java.util.List;
+
+import ua.com.foxminded.university.domain.entities.Lecture;
 
 public class LectureSchedule {
 	

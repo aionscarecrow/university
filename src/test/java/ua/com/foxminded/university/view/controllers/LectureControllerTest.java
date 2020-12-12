@@ -24,7 +24,7 @@ import ua.com.foxminded.university.domain.entities.Student;
 import ua.com.foxminded.university.domain.entities.Teacher;
 import ua.com.foxminded.university.service.LectureService;
 import ua.com.foxminded.university.service.exceptions.ServiceException;
-import ua.com.foxminded.university.view.paginator.EntryQueryablePaginator;
+import ua.com.foxminded.university.view.paginator.LecturePaginator;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Lecture Controller")
@@ -40,7 +40,7 @@ class LectureControllerTest {
 	private MemberController memberController;
 	
 	@Mock(name="lecturePaginator")
-	private EntryQueryablePaginator<Lecture> pagination;
+	private LecturePaginator<Lecture> pagination;
 	
 	@InjectMocks
 	private LectureController lectureController = new LectureController();
@@ -94,30 +94,7 @@ class LectureControllerTest {
 		}		
 	}
 	
-	@Nested
-	@DisplayName("Get lecture by id")
-	class GetLectureByIdTest {
-		
-		@Test
-		@DisplayName("queries paginator for entry if cache valid")
-		void testCallsPaginatorIfCacheValid() throws ServiceException {
-			when(pagination.hasValidCache()).thenReturn(true);
-			lectureController.getLectureById(1);
-			
-			verify(pagination).getEntry(1);
-		}
-		
-		
-		@Test
-		@DisplayName("calls service if cache invalid")
-		void testCallsServiceIfCacheInvalid() throws ServiceException {
-			when(pagination.hasValidCache()).thenReturn(false);
-			lectureController.getLectureById(1);
-			
-			verify(lectureService).retrieveById(1);
-		}
-	}
-	
+
 	@Nested
 	@DisplayName("Edit lecture")
 	class EditLectureTest {
@@ -125,10 +102,9 @@ class LectureControllerTest {
 		@Test
 		@DisplayName("requests lecture if id > 0")
 		void testRequestLectureIfIdSet() throws ServiceException {
-			when(pagination.hasValidCache()).thenReturn(true);
 			lectureController.editLecture(1, Optional.of(1));
 			
-			verify(pagination).getEntry(anyInt());
+			verify(lectureService).retrieveById(anyInt());
 		}
 		
 		
@@ -137,7 +113,7 @@ class LectureControllerTest {
 		void testNoLectureRequestIfNoIdSet() throws ServiceException {
 			lectureController.editLecture(0, Optional.of(1));
 			
-			verify(pagination, never()).getEntry(anyInt());
+			verify(lectureService, never()).retrieveById(anyInt());
 		}
 		
 		
@@ -249,8 +225,6 @@ class LectureControllerTest {
 		@BeforeEach
 		void setUp() {
 			lecture = new Lecture();
-			when(pagination.hasValidCache()).thenReturn(true);
-			when(pagination.getEntry(anyInt())).thenReturn(Optional.of(lecture));
 		}
 		
 		
@@ -267,6 +241,7 @@ class LectureControllerTest {
 		@Test
 		@DisplayName("calls create method for nonexistent lecture")
 		void testCreatesNonexistent() throws ServiceException {
+			when(lectureService.create(lecture)).thenReturn(lecture);
 			lectureController.save(Optional.of(1), lecture);
 			
 			verify(lectureService).create(lecture);
@@ -276,6 +251,7 @@ class LectureControllerTest {
 		@Test
 		@DisplayName("invalidates cache")
 		void testInvalidatesCache() throws ServiceException {
+			when(lectureService.create(lecture)).thenReturn(lecture);
 			lectureController.save(Optional.of(1), lecture);
 			
 			verify(pagination).invalidateCache();
@@ -285,6 +261,7 @@ class LectureControllerTest {
 		@Test
 		@DisplayName("returns proper view")
 		void testReturnsProperView() throws ServiceException {
+			when(lectureService.create(lecture)).thenReturn(lecture);
 			lectureController.save(Optional.of(1), lecture);
 			
 			verify(pagination).invalidateCache();

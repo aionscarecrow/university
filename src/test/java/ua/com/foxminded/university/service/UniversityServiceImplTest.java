@@ -1,30 +1,31 @@
 package ua.com.foxminded.university.service;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import ua.com.foxminded.university.dao.UniversityDao;
-import ua.com.foxminded.university.dao.exceptions.DaoException;
 import ua.com.foxminded.university.domain.University;
 import ua.com.foxminded.university.domain.entities.Lecture;
 import ua.com.foxminded.university.domain.entities.Member;
 import ua.com.foxminded.university.domain.entities.Student;
 import ua.com.foxminded.university.domain.entities.Teacher;
+import ua.com.foxminded.university.domain.exceptions.DomainException;
 import ua.com.foxminded.university.service.exceptions.ServiceException;
 
 
@@ -32,49 +33,180 @@ import ua.com.foxminded.university.service.exceptions.ServiceException;
 @DisplayName("University Service")
 class UniversityServiceImplTest {
 	
-	@Mock 
-	UniversityDao universityDao; 
+	@Mock
+	MemberService memberService;
 	
-	UniversityService universityService;
-	University university;
-	Lecture lecture;
-	Member teacher; 
+	@Mock
+	LectureService lectureService;
+	
+	@InjectMocks
+	UniversityService universityService = new UniversityServiceImpl();
 	
 	
-	@BeforeEach
-	void setUp() throws Exception {
-		universityService = new UniversityServiceImpl(universityDao);
+	@Nested
+	@DisplayName("Retrieve University")
+	class RetrieveUniversityTest {
+		
+		List<Member> members;
+		Student student = new Student();
+		Teacher teacher = new Teacher();
+		
+		@BeforeEach
+		void setUp() throws ServiceException {
+			members = Arrays.asList(student, teacher);
+			when(memberService.retrieveAll()).thenReturn(members);
+			when(lectureService.retrieveAll()).thenReturn(new LinkedList<Lecture>());
+		}
+		
+		@Test
+		@DisplayName("requests members from member service")
+		void testRequestsMembersFromService() throws ServiceException {
+			universityService.retrieveUniversity();
+			verify(memberService).retrieveAll();
+		}
+		
+		@Test
+		@DisplayName("requests lectures from lecture service")
+		void testRequestsLecturesFromService() throws ServiceException {
+			universityService.retrieveUniversity();
+			verify(lectureService).retrieveAll();
+		}
+		
+		@Test
+		@DisplayName("returns proper university object")
+		void testReturnsProperUniversity() throws DomainException, ServiceException {
+			University expectedUniversity = new University();
+			expectedUniversity.addMember(teacher);
+			expectedUniversity.addMember(student);
+			University actualUniversity = universityService.retrieveUniversity();
+			
+			assertEquals(
+					expectedUniversity, actualUniversity, 
+					"should return proper university object");
+		}
+		
+		@Test
+		@DisplayName("handles empty university data")
+		void testBuildsFromEmptyData() throws ServiceException {
+			when(memberService.retrieveAll()).thenReturn(new LinkedList<Member>());
+			University expectedUniversity = new University();
+			University actualUniversity = universityService.retrieveUniversity();
+			
+			assertEquals(
+					expectedUniversity, actualUniversity, 
+					"should return proper university object");
+		}
 	}
 	
 	
 	@Nested
-	@DisplayName("Retrieve")
-	class RetrieveTest {
+	@DisplayName("Schedule Lecture")
+	class ScheduleLectureTest {
 		
 		@Test
-		@DisplayName("retrieves university object")
-		void testRetrieveUniversity() throws DaoException, ServiceException {
-			university = new University();
-			when(universityDao.retrieveUniversity()).thenReturn(university);
+		@DisplayName("calls lecture service to schedule lecture")
+		void testCallsServiceToScheduleLecture() throws ServiceException {
+			Lecture lecture = new Lecture();
+			universityService.scheduleLecture(lecture);
 			
-			University actualUniversity = universityService.retrieveUniversity();
-			assertTrue(
-					university.equals(actualUniversity), 
-					"should return expected university object"
-					);
+			verify(lectureService).create(lecture);
 		}
+		
+		@Test
+		@DisplayName("throws if lecture is null")
+		void testScheduleLectureThrowsIfNull() {
+			assertThrows(
+					ServiceException.class, 
+					() -> universityService.scheduleLecture(null),
+					"should throw ServiceException if argument is null"
+					);
+		} 
+	}
+	
+	@Nested
+	@DisplayName("Cancel Lecture")
+	class CancelLecture {
+		
+		@Test
+		@DisplayName("calls lecture service to cancel lecture")
+		void testCallsServiceToCancelLecture() throws ServiceException {
+			Lecture lecture = new Lecture();
+			lecture.setLectureId(1);
+			universityService.cancelLecture(lecture);
+			
+			verify(lectureService).delete(lecture);
+		}
+		
+		@Test
+		@DisplayName("throws if lecture id not set")
+		void testThrowsIfNoIdSet() throws ServiceException {
+			Lecture lecture = new Lecture();
+			
+			assertThrows(
+					ServiceException.class,
+					() -> universityService.cancelLecture(lecture),
+					"should throw exception if lecture id not set"
+				);
+		}
+		
+		@Test
+		@DisplayName("throws if lecture is null")
+		void testThrowsIfNullPassed() throws ServiceException {
+			Lecture lecture = null;
+			
+			assertThrows(
+					ServiceException.class,
+					() -> universityService.cancelLecture(lecture),
+					"should throw exception if lecture is null"
+				);
+		}
+	}
+	
+	
+	@Nested
+	@DisplayName("Add Member")
+	class AddMember {
+		
+		@Test
+		@DisplayName("calls member service to add member")
+		void testCallsServiceToAddMember() throws ServiceException {
+			Member member = new Member();
+			member.setMemberId(1);
+			universityService.addMember(member);
+			
+			verify(memberService).create(member);
+		}
+		
+		@Test
+		@DisplayName("throws if member is null")
+		void testThrowsIfNullPassed() throws ServiceException {
+			Member member = null;
+			
+			assertThrows(
+					ServiceException.class,
+					() -> universityService.addMember(member),
+					"should throw exception if member is null"
+				);
+		}
+	}
+	
+	
+	@Nested
+	@DisplayName("Retrieve Schedule")
+	class RetrieveScheduleTest {
 		
 		@Test
 		@DisplayName("retrieves monthly list of lectures")
 		void testRetrieveMonthlySchedule() throws ServiceException {
-			lecture = new Lecture();
-			teacher = new Teacher("Gustavo", "Fring");
+			Lecture lecture = new Lecture();
+			Teacher teacher = new Teacher("Gustavo", "Fring");
 			teacher.setMemberId(999);
+			lecture.setTeacher(teacher);
 			List<Lecture> lectures = Collections.nCopies(2, lecture);
-			when(universityDao.retrieveMonthlySchedule(any(Member.class)))
-					.thenReturn(lectures);
+			when(lectureService.retrieveMonthlyLectures()).thenReturn(lectures);
 			
-			List<Lecture> actualSchedule = universityService.retrieveMonthlySchedule(teacher);
+			List<Lecture> actualSchedule = 
+					universityService.retrieveMonthlySchedule(teacher);
 			assertTrue(
 					lectures.equals(actualSchedule), 
 					"should return correct lecture list"
@@ -94,26 +226,28 @@ class UniversityServiceImplTest {
 		@Test
 		@DisplayName("throws if member id invalid")
 		void testRetrieveMonthlyScheduleThrowsIfIdInvalid() {
-			teacher = new Teacher("Brian", "Moser");
+			Teacher teacher = new Teacher("Brian", "Moser");
 			assertThrows(
 					ServiceException.class,
 					() -> universityService.retrieveMonthlySchedule(teacher),
 					"should throw ServiceException if argument is null"
 					);
 		}
-
+		
+		
 		@Test
 		@DisplayName("retrieves daily list of lectures")
 		void testRetrieveDailySchedule() throws ServiceException {
-			lecture = new Lecture();
+			Lecture lecture = new Lecture();
 			lecture.setLectureId(999);
-			teacher = new Teacher("Gustavo", "Fring");
+			Teacher teacher = new Teacher("Gustavo", "Fring");
 			teacher.setMemberId(999);
+			lecture.setTeacher(teacher);
 			List<Lecture> lectures = Collections.nCopies(2, lecture);
-			when(universityDao.retrieveDailySchedule(any(Member.class)))
-					.thenReturn(lectures);
+			when(lectureService.retrieveDailyLectures()).thenReturn(lectures);
 			
-			List<Lecture> actualSchedule = universityService.retrieveDailySchedule(teacher);
+			List<Lecture> actualSchedule = 
+					universityService.retrieveDailySchedule(teacher);
 			assertTrue(
 					lectures.equals(actualSchedule), 
 					"should return correct lecture list"
@@ -133,113 +267,14 @@ class UniversityServiceImplTest {
 		@Test
 		@DisplayName("throws if member id invalid")
 		void testRetrieveDailyScheduleThrowsIfIdInvalid() {
-			teacher = new Teacher("Brian", "Moser");
+			Teacher teacher = new Teacher("Brian", "Moser");
 			assertThrows(
 					ServiceException.class,
 					() -> universityService.retrieveDailySchedule(teacher),
 					"should throw ServiceException if argument is null"
 					);
 		}
-	}
-	
-	
-	@Nested
-	@DisplayName("AddMember")
-	class AddMemberTest {
 		
-		@Test
-		@DisplayName("calls method to add member")
-		void testAddMember() throws ServiceException, DaoException {
-			teacher = new Teacher("Gustavo", "Fring");
-			teacher.setMemberId(999);
-			universityService.addMember(teacher);
-			verify(universityDao).addMember(teacher);
-		}
-		
-		
-		@Test
-		@DisplayName("throws if member null")
-		void testAddMemberThrowsIfNull() {
-			assertThrows(
-					ServiceException.class, 
-					() -> universityService.addMember(null),
-					"should throw ServiceException if member is null"
-					);
-		}
-		
-		@Test
-		@DisplayName("throws if member id invalid")
-		void testAddMemberThrowsIfIdInvalid() {
-			Student student = new Student("Dexter", "Morgan");
-			student.setMemberId(0);
-			assertThrows(
-					ServiceException.class, 
-					() -> universityService.addMember(student),
-					"should throw ServiceException if member id invalid"
-					);
-		}
-		
-	}
-
-	
-	@Nested
-	@DisplayName("ScheduleLecture")
-	class ScheduleLectureTest {
-		
-		@Test
-		@DisplayName("calls method to schedule lecture")
-		void testScheduleLecture() throws ServiceException, DaoException {
-			lecture = new Lecture();
-			universityService.scheduleLecture(lecture);
-			verify(universityDao).scheduleLecture(lecture);
-		}
-		
-		@Test
-		@DisplayName("throws if lecture is null")
-		void testScheduleLectureThrowsIfNull() {
-			assertThrows(
-					ServiceException.class, 
-					() -> universityService.scheduleLecture(null),
-					"should throw ServiceException if argument is null"
-					);
-		} 
-	}
-
-	
-	@Nested
-	@DisplayName("CancelLecture")
-	class CancelLectureTest {
-		
-		@Test
-		@DisplayName("calls method to cancel scheduled lecture")
-		void testCancelLecture() throws ServiceException, DaoException {
-			lecture = new Lecture();
-			lecture.setLectureId(ThreadLocalRandom.current().nextInt(2, 99));
-			universityService.cancelLecture(lecture);
-			verify(universityDao).cancelLecture(lecture);
-		}
-		
-		@Test
-		@DisplayName("throws if lecture is null")
-		void testCancelLectureThrowsIfNull() {
-			assertThrows(
-					ServiceException.class, 
-					() -> universityService.cancelLecture(null),
-					"should throw ServiceException if argument is null"
-					);
-		}
-		
-		@Test
-		@DisplayName("throws if lecture id invalid")
-		void testCancelLectureThrowsIfIdInvalid() {
-			lecture = new Lecture();
-			lecture.setLectureId(0);
-			assertThrows(
-					ServiceException.class, 
-					() -> universityService.cancelLecture(lecture),
-					"should throw ServiceException if lecture id invalid"
-					);
-		} 
 	}
 		
 }

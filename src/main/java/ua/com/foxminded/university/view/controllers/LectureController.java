@@ -8,7 +8,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -22,7 +21,7 @@ import ua.com.foxminded.university.domain.entities.Student;
 import ua.com.foxminded.university.domain.entities.Teacher;
 import ua.com.foxminded.university.service.LectureService;
 import ua.com.foxminded.university.service.exceptions.ServiceException;
-import ua.com.foxminded.university.view.paginator.EntryQueryablePaginator;
+import ua.com.foxminded.university.view.paginator.LecturePaginator;
 import ua.com.foxminded.university.view.paginator.PageData;
 
 @Controller
@@ -39,7 +38,7 @@ public class LectureController {
 
 	@Autowired
 	@Qualifier("lecturePaginator")
-	EntryQueryablePaginator<Lecture> pagination;
+	LecturePaginator<Lecture> pagination;
 	
 	public static final String TABLE_FRAGMENT = "fragments/lectures :: lecturesTable";
 	public static final String EDIT_FRAGMENT = "fragments/lectures :: lectureEditor";
@@ -77,20 +76,6 @@ public class LectureController {
 	}
 	
 	
-	Lecture getLectureById(int id) throws ServiceException {
-		if(pagination.hasValidCache()) {
-			Optional<Lecture> lecture = pagination.getEntry(id);
-			if(lecture.isPresent()) {
-				log.info("returning lecture from paginator [{}]", 
-						lecture.get().stringify());
-				return lecture.get();
-			}
-		}
-		log.info("returning lecture from service");
-		return lectureService.retrieveById(id);
-	}
-	
-	
 	@GetMapping("/lectureEditor")
 	public ModelAndView editLecture(@RequestParam(defaultValue = "0") int id,
 			@RequestParam Optional<Integer> page) throws ServiceException {
@@ -99,7 +84,7 @@ public class LectureController {
 		
 		ModelAndView modelView = new ModelAndView(EDIT_FRAGMENT);
 		if(id > 0) {
-			modelView.addObject("lecture", getLectureById(id));
+			modelView.addObject("lecture", lectureService.retrieveById(id));
 			log.info("existing lecture added to model");
 		} else {
 			Lecture lecture = new Lecture();
@@ -173,7 +158,8 @@ public class LectureController {
 			modelView.addObject("dateTime", LocalDateTime.parse(date));
 		}
 		
-		log.debug("DateTime set [{}]", modelView.getModelMap().get("dateTime"));
+		log.debug("DateTime added to model [{}]", 
+				modelView.getModelMap().get("dateTime"));
 
 		return modelView;
 	}
@@ -191,13 +177,13 @@ public class LectureController {
 			lectureId = lecture.getLectureId();
 		} else {
 			log.debug("Creating new lecture");
-			lectureId = lectureService.create(lecture);
+			lectureId = lectureService.create(lecture).getLectureId();
 		}
 		
 		pagination.invalidateCache();
 		
 		ModelAndView modelView = new ModelAndView(EDIT_FRAGMENT);
-		modelView.addObject("lecture", getLectureById(lectureId));
+		modelView.addObject("lecture", lectureService.retrieveById(lectureId));
 		modelView.addObject("url", "/saveLecture");
 		modelView.addObject("page", page.orElse(1));
 		
@@ -208,9 +194,11 @@ public class LectureController {
 	@PostMapping("/deleteLecture")
 	public ModelAndView delete(@RequestParam(required = true) int id,
 			Optional<Integer> page) throws ServiceException {
+
 		Lecture lecture = new Lecture();
 		lecture.setLectureId(id);
 		lectureService.delete(lecture);
+		
 		pagination.invalidateCache();
 		return listLectures(page.orElse(1), null);
 	}

@@ -11,7 +11,8 @@ public class PageData <T>{
 	private List<T> pageContent;
 	
 	public PageData() {
-		this.pageNumber = 0;
+		this.pageNumber = 1;
+		this.pageCount = 1;
 		this.pageContent = new ArrayList<>();
 	}
 

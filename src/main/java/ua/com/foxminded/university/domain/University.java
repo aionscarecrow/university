@@ -12,7 +12,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ua.com.foxminded.university.domain.entities.Lecture;
-import ua.com.foxminded.university.domain.entities.LectureSchedule;
 import ua.com.foxminded.university.domain.entities.Member;
 import ua.com.foxminded.university.domain.entities.Student;
 import ua.com.foxminded.university.domain.entities.Teacher;
@@ -32,6 +31,12 @@ public class University {
 		this.teachers = new LinkedList<>();
 		this.students = new LinkedList<>();
 		this.schedule = new LectureSchedule();
+	}
+	
+	public University(UniversityData data) {
+		this.teachers = data.getTeachers();
+		this.students = data.getStudents();
+		this.schedule = new LectureSchedule(data.getLectures());
 	}
 	
 	public List<Teacher> getTeachers() {
@@ -94,7 +99,7 @@ public class University {
 	
 	private boolean hasNoScheduleConflicts(Lecture newLecture) {
 		log.debug("checking for schedule conflict of [{}]", newLecture.stringify());
-		Teacher teacher = newLecture.getTeacher();
+		Member teacher = newLecture.getTeacher();
 		LocalDateTime lectureTime = newLecture.getDate();
 		
 		for(Lecture currentLecture : schedule.getLectures()) {

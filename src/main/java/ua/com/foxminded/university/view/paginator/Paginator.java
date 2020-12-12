@@ -109,7 +109,12 @@ public class Paginator<T> {
 		if(data == null) {
 			throw new IllegalArgumentException("Pageable data can't be set to null");
 		}
-		log.debug("Received [{}] entries, [{}]", data.size(), Arrays.deepToString(classes));
+		
+		if(log.isDebugEnabled()) {
+			log.debug("Received [{}] entries, classes to index [{}]", 
+					data.size(), Arrays.deepToString(classes));
+		}
+
 		cache.setData(data, classes);
 	}
 
@@ -130,6 +135,8 @@ public class Paginator<T> {
 		private Map<Class<?>, List<Integer>> classIndices;
 		private long expirationTimestamp = 0L;
 		private int cacheTTL = 60;
+		
+		private final Logger log = LoggerFactory.getLogger(getClass());
 		
 		private Cache() {
 			this.bulkData = new ArrayList<>();

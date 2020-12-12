@@ -57,7 +57,18 @@ function submitForm(responseTarget='.fragmentTarget'){
 		data: $('.form').serialize(),
 		dataType : 'html',
 		success : function (response) {
-			$(responseTarget).html(response);
+			
+			 var modalIndex = $('<div />')
+		   		.append(response)
+		   		.find('.modalFragment')
+		   		.index();
+		   
+		   if(modalIndex === -1){
+			   $(responseTarget).html(response);
+		   } else {
+			   $(".modalTarget").html(response);
+		   }
+	
 		}
 	});
 }

@@ -6,5 +6,6 @@
 .project
 message
 README.md
-.log
+*.log
 *.*.log
+*.gz

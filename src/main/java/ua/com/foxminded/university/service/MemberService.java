@@ -11,16 +11,12 @@ public interface MemberService {
 
 	Member retrieveById(int id) throws ServiceException;
 
-	List<Member> retrieveByLectureId(int lectureId) throws ServiceException;
-
-	List<Member> retrieveAllTeachers() throws ServiceException;
-
-	List<Member> retrieveAllStudents() throws ServiceException;
-
 	List<Member> retrieveAll() throws ServiceException;
 
 	void update(Member member) throws ServiceException;
 
 	void delete(Member member) throws ServiceException;
+
+	Integer getLectureCount(Member member) throws ServiceException;
 
 }

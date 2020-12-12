@@ -15,7 +15,7 @@
 			<table class="table table-hover table-striped">
 				<thead class="thead-dark">
 					<tr class="d-flex">
-						<th class="col-1">Id</th>
+						<th class="col-1 text-center">Id</th>
 						<th class="col-2">Type</th>
 						<th class="col-3">First Name</th>
 						<th class="col-3">Last Name</th>
@@ -24,7 +24,7 @@
 				</thead>
 				<tbody>
 					<tr class="d-flex" th:each="member :${pageData.pageContent}">
-						<td class="col-1" th:text="${member.memberId}">
+						<td class="col-1 text-center" th:text="${member.memberId}">
 						</td>
 						<td class="col-2" th:text="${member.typeId}==1? 'Teacher' : 'Student'">
 						</td>

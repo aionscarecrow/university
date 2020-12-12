@@ -35,7 +35,6 @@ public class LectureArgumentResolver implements HandlerMethodArgumentResolver {
 	}
 	
 	private Lecture buildLecture(Map<String, String[]> params) {
-		
 		Integer lectureId = Integer.valueOf(params.get("lectureId")[0]);
 		LocalDateTime date = LocalDateTime.parse(params.get("date")[0]);
 		Integer courseId = Integer.valueOf(params.get("courseId")[0]);

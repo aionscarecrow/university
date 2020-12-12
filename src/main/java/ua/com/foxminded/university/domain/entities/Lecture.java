@@ -2,27 +2,59 @@ package ua.com.foxminded.university.domain.entities;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
+import javax.persistence.ManyToMany;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
+import javax.persistence.Transient;
+
+@Entity
+@Table(name = "lectures")
 public class Lecture {
 	
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(name = "lecture_id")
 	private int lectureId;
-	private LocalDateTime date;
-	private Course course;
-	private Teacher teacher;
-	private List<Student> students = new LinkedList<>();
 	
+	@Column(name = "date", nullable = false)
+	private LocalDateTime date;
+	
+	@ManyToOne
+	@JoinColumn(name = "course_id", nullable = false)
+	private Course course;
+	
+	@ManyToOne
+	@JoinColumn(name = "teacher_id", nullable = false)
+	private Member teacher;
+	
+	@ManyToMany(fetch = FetchType.EAGER)
+	@JoinTable(name = "lecture_student", 
+			joinColumns = @JoinColumn(name = "lecture_id"),
+			inverseJoinColumns = @JoinColumn(name = "student_id"))
+	private Set<Member> students = new HashSet<>();
+
+	@Transient
 	private DateTimeFormatter formatter = 
 			DateTimeFormatter.ofPattern("uuuu-MM-dd' 'HH:mm:ss");
 
 	
 	public Lecture() {
-		super();
 	}
 	
 	public Lecture(LocalDateTime date, Course course, Teacher teacher) {
-		super();
 		this.date = date;
 		this.course = course;
 		this.teacher = teacher;
@@ -56,20 +88,24 @@ public class Lecture {
 		this.course = course;
 	}
 
-	public Teacher getTeacher() {
+	public Member getTeacher() {
 		return teacher;
 	}
 
-	public void setTeacher(Teacher teacher) {
+	public void setTeacher(Member teacher) {
 		this.teacher = teacher;
 	}
 
-	public List<Student> getStudents() {
-		return students;
+	public List<Member> getStudents() {
+		return new LinkedList<>(students);
 	}
 
-	public void addStudent(Student student) {
+	public void addStudent(Member student) {
 		students.add(student);
+	}
+	
+	public void removeStudent(Member student) {
+		students.remove(student);
 	}
 	
 	

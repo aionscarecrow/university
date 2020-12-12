@@ -8,7 +8,7 @@ import ua.com.foxminded.university.service.exceptions.ServiceException;
 
 public interface LectureService {
 
-	int create(Lecture lecture) throws ServiceException;
+	Lecture create(Lecture lecture) throws ServiceException;
 
 	Lecture retrieveById(int id) throws ServiceException;
 
@@ -16,10 +16,12 @@ public interface LectureService {
 
 	void update(Lecture lecture) throws ServiceException;
 
-	void addStudent(Lecture lecture, Member member) throws ServiceException;
-
-	void removeStudent(Lecture lecture, Member member) throws ServiceException;
-
 	void delete(Lecture lecture) throws ServiceException;
+
+	Integer getLectureCountFor(Member member);
+
+	List<Lecture> retrieveMonthlyLectures();
+
+	List<Lecture> retrieveDailyLectures();
 
 }
